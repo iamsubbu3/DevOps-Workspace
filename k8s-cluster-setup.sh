@@ -71,30 +71,34 @@ cleanup_pending_release () {
 }
 
 # Auto-detect ALL LoadBalancer services (WITH PORTS)
-print_loadbalancers () {
+print_loadbalancers() {
+
   echo ""
   echo "🌐 External LoadBalancer Endpoints"
-  echo "-------------------------------------------------------------"
-  printf "%-15s %-35s %-45s %-10s\n" "NAMESPACE" "SERVICE" "EXTERNAL-IP" "PORT"
-  echo "-------------------------------------------------------------"
+  echo "--------------------------------------------------------------------------------------------------------------------------------"
+  printf "%-15s %-40s %-70s %-6s\n" "NAMESPACE" "SERVICE" "EXTERNAL-IP" "PORT"
+  echo "--------------------------------------------------------------------------------------------------------------------------------"
 
   kubectl get svc -A \
     --field-selector spec.type=LoadBalancer \
     -o json | jq -r '
-    .items[] |
-    select(.status.loadBalancer.ingress[0].hostname != null or .status.loadBalancer.ingress[0].ip != null) |
-    [
-      .metadata.namespace,
-      .metadata.name,
-      (.status.loadBalancer.ingress[0].hostname // .status.loadBalancer.ingress[0].ip),
-      (.spec.ports[0].port | tostring)
-    ] | @tsv' | while IFS=$'\t' read -r ns name host port; do
-      printf "%-15s %-35s %-45s %-10s\n" "$ns" "$name" "$host" "$port"
-      echo "  ↳ URL: http://$host:$port"
-    done
+      .items[]
+      | select(.status.loadBalancer.ingress[0].hostname != null or .status.loadBalancer.ingress[0].ip != null)
+      | [
+          .metadata.namespace,
+          .metadata.name,
+          (.status.loadBalancer.ingress[0].hostname // .status.loadBalancer.ingress[0].ip),
+          (.spec.ports[0].port | tostring)
+        ]
+      | @tsv' | while IFS=$'\t' read -r ns name host port; do
 
-  echo "-------------------------------------------------------------"
+        printf "%-15s %-40s %-70s %-6s\n" "$ns" "$name" "$host" "$port"
+        echo "  ↳ URL: http://${host}:${port}"
+      done
+
+  echo "--------------------------------------------------------------------------------------------------------------------------------"
 }
+
 
 # ----------------------------------------------------
 # 6️⃣ Install ArgoCD
